@@ -68,27 +68,23 @@ exports.step1 = function(data) {
  * @param {object} data - Data bundle
  * @return {object} - Promise resolved with data.
  */
-exports.step2 = function(data) {
-    return new Promise(function(resolve, reject) {
-        for (const [index, item] of data.items.entries()) {
-            console.log('Read config for: ' + item);
-            var params = {
-                Bucket: "ses.schams.net",
-                Key: "promise/" + item
-            };
-            var getObjectPromise = data.s3.getObject(params).promise();
-            getObjectPromise.then(function(foobar) {
-                console.log('Success');
-                var config = JSON.parse(foobar.Body.toString('utf-8'));
-                if (config) {
-                    data.config[item] = config;
-                }
-            }).catch(function(err) {
-                console.log(err);
-            });
+exports.step2 = async function(data) {
+    for (const [index, item] of data.items.entries()) {
+        console.log('Read config for: ' + item);
+        var params = {
+            Bucket: "ses.schams.net",
+            Key: "promise/" + item
+        };
+        var object = await data.s3.getObject(params).promise();
+        var config = JSON.parse(object.Body.toString('utf-8'));
+        if (config != null && config != undefined) {
+            data.config[item] = config;
+            console.log(util.inspect(config, {
+                depth: 5
+            }));
         }
-        return resolve(data);
-    });
+    }
+    return Promise.resolve(data);
 };
 
 /**
